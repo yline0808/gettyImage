@@ -2,15 +2,19 @@ package net.ddns.myapplication;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.collection.LruCache;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import net.ddns.myapplication.adapter.ImgAdapter;
 import net.ddns.myapplication.item.RowImg;
@@ -27,8 +31,9 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
     private final String WEB_URL = "https://www.gettyimages.com/photos/collaboration?page=%d&phrase=collaboration&sort=mostpopular";
     private RecyclerView recyclerView;
-    private ArrayList<RowImg> rowImgList = new ArrayList<>();
     private ImgAdapter imgAdapter;
+    private ArrayList<RowImg> rowImgList = new ArrayList<>();
+    public LruCache<String, Bitmap> memoryCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,11 +44,6 @@ public class MainActivity extends AppCompatActivity {
 
         new GetImgSrc().execute();
 
-        setListener();
-    }
-
-
-    private void setListener(){
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -61,31 +61,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class GetImgSrc extends AsyncTask<Void, Void, Void>{
-        private int pageNum;
         private ProgressDialog progressDialog;
+        private int pageNum;
 
         public GetImgSrc() {
             this.pageNum = 1;
         }
 
-        public GetImgSrc(int itemSize) {
-            this.pageNum = itemSize == 0 ? 1 : itemSize / 20 + 1;
-        }
-
-        private Bitmap convStringToBitmap(String src){
-            Bitmap bm = null;
-            try{
-                URL url = new URL(src);
-                URLConnection conn = url.openConnection();
-                conn.connect();
-                BufferedInputStream bis = new BufferedInputStream(conn.getInputStream());
-                bm = BitmapFactory.decodeStream(bis);
-                bis.close();
-            }catch(Exception e){
-                Log.e("===ERROR BIT", e.toString());
-                e.printStackTrace();
-            }
-            return bm;
+        public GetImgSrc(int rowCnt) {
+            this.pageNum = rowCnt / 20 + 1;
         }
 
         @Override
@@ -104,15 +88,13 @@ public class MainActivity extends AppCompatActivity {
                 Document doc = Jsoup.connect(String.format(WEB_URL, pageNum)).get();
                 Elements mElementDataSize = doc.select("div[class=search-content__gallery-assets]").select("img");
                 for(int i = 0; i < mElementDataSize.size(); i += 3){
-                    Log.d("====l" + i, mElementDataSize.get(i).attr("src"));
-                    Log.d("====i" + (i+1), mElementDataSize.get(i+1).attr("src"));
-                    Log.d("====s" + (i+2), mElementDataSize.get(i+2).attr("src"));
                     rowImgList.add(new RowImg(
-                            convStringToBitmap(mElementDataSize.get(i).attr("src")),
-                            convStringToBitmap(mElementDataSize.get(i+1).attr("src")),
-                            convStringToBitmap(mElementDataSize.get(i+2).attr("src"))
+                            mElementDataSize.get(i).attr("src"),
+                            mElementDataSize.get(i+1).attr("src"),
+                            mElementDataSize.get(i+2).attr("src")
                     ));
                 }
+                Log.d("===srcResult", rowImgList.toString());
             }catch (Exception e){
                 Log.e("===ERROR", "doInBackground");
                 e.printStackTrace();
@@ -122,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            if(pageNum==1){
+            if(this.pageNum==1){
                 imgAdapter = new ImgAdapter(rowImgList);
                 RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
                 recyclerView.setLayoutManager(layoutManager);
@@ -130,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
             }else{
                 imgAdapter.notifyDataSetChanged();
             }
+            Toast.makeText(getApplicationContext(), "PAGE : " + pageNum, Toast.LENGTH_SHORT).show();
+            Log.d("===Success" + rowImgList.size(), rowImgList.get(rowImgList.size()-1).toString());
             progressDialog.dismiss();
         }
     }
