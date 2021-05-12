@@ -24,10 +24,10 @@ public class ImgAdapter extends RecyclerView.Adapter<ImgAdapter.ViewHolder> {
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-//        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_web_img, false);
-        Context context = parent.getContext();
-        LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = inflater.inflate(R.layout.item_img, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_img, parent, false);
+//        Context context = parent.getContext();
+//        LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+//        View view = inflater.inflate(R.layout.item_img, parent, false);
         return new ViewHolder(view);
     }
 
