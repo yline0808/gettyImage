@@ -1,7 +1,6 @@
 package net.ddns.myapplication.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,15 +10,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import net.ddns.myapplication.R;
-import net.ddns.myapplication.item.WebImg;
+import net.ddns.myapplication.item.RowImg;
 
 import java.util.ArrayList;
 
-public class WebImgAdapter extends RecyclerView.Adapter<WebImgAdapter.ViewHolder> {
-    private ArrayList<WebImg> webImgs;
+public class ImgAdapter extends RecyclerView.Adapter<ImgAdapter.ViewHolder> {
+    private ArrayList<RowImg> rowImgList;
 
-    public WebImgAdapter(ArrayList<WebImg> webImgs) {
-        this.webImgs = webImgs;
+    public ImgAdapter(ArrayList<RowImg> rowImgList) {
+        this.rowImgList = rowImgList;
     }
 
     @NonNull
@@ -28,31 +27,31 @@ public class WebImgAdapter extends RecyclerView.Adapter<WebImgAdapter.ViewHolder
 //        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_web_img, false);
         Context context = parent.getContext();
         LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = inflater.inflate(R.layout.item_web_img, parent, false);
+        View view = inflater.inflate(R.layout.item_img, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.imgViewLeft.setImageBitmap(webImgs.get(position).getImgUrlLeft());
-        holder.imgViewMiddle.setImageBitmap(webImgs.get(position).getImgUrlMiddle());
-        holder.imgViewRight.setImageBitmap(webImgs.get(position).getImgUrlRight());
+        holder.imgLeft.setImageBitmap(rowImgList.get(position).getImgLeft());
+        holder.imgMiddle.setImageBitmap(rowImgList.get(position).getImgMiddle());
+        holder.imgRight.setImageBitmap(rowImgList.get(position).getImgRight());
     }
 
     @Override
     public int getItemCount() {
-        return webImgs.size();
+        return rowImgList.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
-        private ImageView imgViewLeft, imgViewMiddle, imgViewRight;
+        private ImageView imgLeft, imgMiddle, imgRight;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            imgViewLeft = (ImageView) itemView.findViewById(R.id.imgViewLeft);
-            imgViewMiddle = (ImageView) itemView.findViewById(R.id.imgViewMiddle);
-            imgViewRight = (ImageView) itemView.findViewById(R.id.imgViewRight);
+            imgLeft = (ImageView) itemView.findViewById(R.id.img_left);
+            imgMiddle = (ImageView) itemView.findViewById(R.id.img_middle);
+            imgRight = (ImageView) itemView.findViewById(R.id.img_right);
         }
     }
 }
