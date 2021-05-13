@@ -2,7 +2,6 @@ package net.ddns.myapplication;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.collection.LruCache;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ImgAdapter imgAdapter;
     private ArrayList<RowImg> rowImgList = new ArrayList<>();
-    public LruCache<String, Bitmap> memoryCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +39,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         recyclerView = (RecyclerView)findViewById(R.id.recycler_img);
-
         new GetImgSrc().execute();
-
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
