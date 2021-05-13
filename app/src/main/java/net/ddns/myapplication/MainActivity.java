@@ -6,13 +6,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.ProgressDialog;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import net.ddns.myapplication.adapter.ImgAdapter;
@@ -22,9 +18,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import java.io.BufferedInputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -83,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             try{
                 Document doc = Jsoup.connect(String.format(WEB_URL, pageNum)).get();
                 Elements mElementDataSize = doc.select("div[class=search-content__gallery-assets]").select("img");
+
                 for(int i = 0; i < mElementDataSize.size(); i += 3){
                     rowImgList.add(new RowImg(
                             mElementDataSize.get(i).attr("src"),
@@ -92,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Log.d("===srcResult", rowImgList.toString());
             }catch (Exception e){
-                Log.e("===ERROR", "doInBackground");
+                Log.e("===ERROR", "doInBackground" + e.toString());
                 e.printStackTrace();
             }
             return null;
@@ -109,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                 imgAdapter.notifyDataSetChanged();
             }
             Toast.makeText(getApplicationContext(), "PAGE : " + pageNum, Toast.LENGTH_SHORT).show();
-            Log.d("===Success" + rowImgList.size(), rowImgList.get(rowImgList.size()-1).toString());
+//            Log.d("===Success" + rowImgList.size(), rowImgList.get(rowImgList.size()-1).toString());
             progressDialog.dismiss();
         }
     }
