@@ -1,7 +1,5 @@
 package net.ddns.myapplication.item;
 
-import android.graphics.Bitmap;
-
 public class RowImg {
     String imgLeft, imgMiddle, imgRight;
 

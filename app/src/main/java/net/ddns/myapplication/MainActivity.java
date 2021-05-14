@@ -5,15 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import net.ddns.myapplication.adapter.ImgAdapter;
 import net.ddns.myapplication.item.RowImg;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -25,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ImgAdapter imgAdapter;
     private ArrayList<RowImg> rowImgList = new ArrayList<>();
+    private boolean isLoading = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,38 +42,41 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                if(!recyclerView.canScrollVertically(1)){
-                    new GetImgSrc(rowImgList.size()).execute();
+
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if(!isLoading){
+                    if(layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == rowImgList.size() - 1){
+                        new GetImgSrc(rowImgList.size()).execute();
+                        isLoading = true;
+                    }
                 }
             }
         });
     }
 
     private class GetImgSrc extends AsyncTask<Void, Void, Void>{
-        private ProgressDialog progressDialog;
+        private int scrollPosition;
         private int pageNum;
+        private boolean isEnd = false;
 
         public GetImgSrc() {
             this.pageNum = 1;
+            imgAdapter = new ImgAdapter(rowImgList);
         }
 
         public GetImgSrc(int rowCnt) {
-            this.pageNum = rowCnt / 20 + 1;
-        }
+            this.pageNum = (rowCnt / 20 + 1)+100;
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progressDialog.setMessage("로딩중...");
-            progressDialog.show();
+            rowImgList.add(null);
+            imgAdapter.notifyItemInserted(rowImgList.size() - 1);
+            recyclerView.scrollToPosition(rowImgList.size() - 1);
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
             try{
+                scrollPosition = rowImgList.size();
+
                 Document doc = Jsoup.connect(String.format(WEB_URL, pageNum)).get();
                 Elements mElementDataSize = doc.select("div[class=search-content__gallery-assets]").select("img");
 
@@ -84,9 +87,11 @@ public class MainActivity extends AppCompatActivity {
                             mElementDataSize.get(i+2).attr("src")
                     ));
                 }
-                Log.d("===srcResult", rowImgList.toString());
-            }catch (Exception e){
-                Log.e("===ERROR", "doInBackground" + e.toString());
+            }catch (HttpStatusException httpStatusException){
+                httpStatusException.printStackTrace();
+                isEnd = true;
+            }
+            catch (Exception e){
                 e.printStackTrace();
             }
             return null;
@@ -94,17 +99,17 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void aVoid) {
+            isLoading = false;
             if(this.pageNum==1){
-                imgAdapter = new ImgAdapter(rowImgList);
                 RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
                 recyclerView.setLayoutManager(layoutManager);
                 recyclerView.setAdapter(imgAdapter);
             }else{
+                rowImgList.remove(scrollPosition-1);
                 imgAdapter.notifyDataSetChanged();
             }
-            Toast.makeText(getApplicationContext(), "PAGE : " + pageNum, Toast.LENGTH_SHORT).show();
-//            Log.d("===Success" + rowImgList.size(), rowImgList.get(rowImgList.size()-1).toString());
-            progressDialog.dismiss();
+
+            Toast.makeText(getApplicationContext(), isEnd ? "마지막 페이지 입니다." :("PAGE : " + pageNum), Toast.LENGTH_SHORT).show();
         }
     }
 }
