@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import net.ddns.myapplication.adapter.ImgAdapter;
@@ -22,9 +23,9 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
     private final String WEB_URL = "https://www.gettyimages.com/photos/collaboration?page=%d&phrase=collaboration&sort=mostpopular";
     private RecyclerView recyclerView;
-    private ImgAdapter imgAdapter;
     private ArrayList<RowImg> rowImgList = new ArrayList<>();
-    private boolean isLoading = false;
+    private ImgAdapter imgAdapter = new ImgAdapter(rowImgList);
+    private boolean isLoading = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,51 +33,52 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         recyclerView = (RecyclerView)findViewById(R.id.recycler_img);
-        new GetImgSrc().execute();
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-            }
+        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+        recyclerView.setAdapter(imgAdapter);
+        recyclerView.addOnScrollListener(scrollListener);
 
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-
-                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-                if(!isLoading){
-                    if(layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == rowImgList.size() - 1){
-                        new GetImgSrc(rowImgList.size()).execute();
-                        isLoading = true;
-                    }
-                }
-            }
-        });
+        new GetImgSrc().execute(1);
     }
 
-    private class GetImgSrc extends AsyncTask<Void, Void, Void>{
-        private int scrollPosition;
-        private int pageNum;
-        private boolean isEnd = false;
-
-        public GetImgSrc() {
-            this.pageNum = 1;
-            imgAdapter = new ImgAdapter(rowImgList);
+    private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
         }
 
-        public GetImgSrc(int rowCnt) {
-            this.pageNum = (rowCnt / 20 + 1)+100;
+        @Override
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
 
+            LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+            if(!isLoading){
+                if(layoutManager != null && layoutManager.findLastCompletelyVisibleItemPosition() == rowImgList.size() - 1){
+                    new GetImgSrc().execute(rowImgList.size());
+                    isLoading = true;
+                }
+            }
+        }
+    };
+
+    private class GetImgSrc extends AsyncTask<Integer, Void, Void>{
+        private int pageNum = 0;
+        private int scrollPosition = 0;
+        private boolean isEnd = false;
+
+        @Override
+        protected void onPreExecute() {
             rowImgList.add(null);
             imgAdapter.notifyItemInserted(rowImgList.size() - 1);
             recyclerView.scrollToPosition(rowImgList.size() - 1);
         }
 
         @Override
-        protected Void doInBackground(Void... voids) {
+        protected Void doInBackground(Integer... itemCnt) {
             try{
-                scrollPosition = rowImgList.size();
+                this.scrollPosition = rowImgList.size();
+                pageNum = itemCnt[0] <= 1 ? 1 : (itemCnt[0] / 20 + 1);
 
+                Log.d("===pageNum", pageNum + "");
                 Document doc = Jsoup.connect(String.format(WEB_URL, pageNum)).get();
                 Elements mElementDataSize = doc.select("div[class=search-content__gallery-assets]").select("img");
 
@@ -89,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }catch (HttpStatusException httpStatusException){
                 httpStatusException.printStackTrace();
-                isEnd = true;
+                this.isEnd = true;
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -100,16 +102,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             isLoading = false;
-            if(this.pageNum==1){
-                RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-                recyclerView.setLayoutManager(layoutManager);
-                recyclerView.setAdapter(imgAdapter);
-            }else{
-                rowImgList.remove(scrollPosition-1);
-                imgAdapter.notifyDataSetChanged();
-            }
+            rowImgList.remove(scrollPosition-1);
+            imgAdapter.notifyDataSetChanged();
 
-            Toast.makeText(getApplicationContext(), isEnd ? "마지막 페이지 입니다." :("PAGE : " + pageNum), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), this.isEnd ? "마지막 페이지 입니다." :("PAGE : " + this.pageNum), Toast.LENGTH_SHORT).show();
         }
     }
 }
